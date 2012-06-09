@@ -1,0 +1,23 @@
+---
+abstract: 'Redis as back-end storage for the Google Safe Browsing v2 database'
+author:
+  - 'Julien Sobrier <jsobrier@localdomain>'
+build_requires:
+  ExtUtils::MakeMaker: 0
+configure_requires:
+  ExtUtils::MakeMaker: 0
+dynamic_config: 1
+generated_by: 'ExtUtils::MakeMaker version 6.62, CPAN::Meta::Converter version 2.112150'
+license: unknown
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: Net-Google-SafeBrowsing2-Redis
+no_index:
+  directory:
+    - t
+    - inc
+requires:
+  Net::Google::SafeBrowsing2::Storage: 0.4
+  Redis::hiredis: 0
+version: 0.1
