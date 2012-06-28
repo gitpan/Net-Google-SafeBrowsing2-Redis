@@ -9,7 +9,7 @@ use Carp;
 use Redis::hiredis;
 
 
-our $VERSION = '0.1';
+our $VERSION = '0.03';
 
 
 =head1 NAME
@@ -53,11 +53,11 @@ Optional. Redis host name. "127.0.01" by default
 
 =item database
 
-Optional. MySQL database name to connect to. 0 by default.
+Optional. Redis database name to connect to. 0 by default.
 
 =item port
 
-Optional. Reids port number to connect to. 6379 by default.
+Optional. Redis port number to connect to. 6379 by default.
 
 
 =back
@@ -83,7 +83,7 @@ sub new {
     return $self;
 }
 
-head1 PUBLIC FUNCTIONS
+=head1 PUBLIC FUNCTIONS
 
 =over 4
 
@@ -189,23 +189,27 @@ sub get_sub_chunks {
 	return @list;
 }
 
-# TODO: avoid duplicate code
+
 sub get_add_chunks_nums {
 	my ($self, %args) 	= @_;
 	my $list			= $args{'list'}		|| '';
 
-
-	my $key = "a$list";
-	my $values = $self->redis()->zrangebyscore($key, "-inf", "+inf");
-
-	return @$values;
+	return $self->get_chunks_nums(type => 'a', list => $list);
 }
 
 sub get_sub_chunks_nums {
 	my ($self, %args) 	= @_;
 	my $list			= $args{'list'}		|| '';
 
-	my $key = "s$list";
+	return $self->get_chunks_nums(type => 's', list => $list);
+}
+
+sub get_chunks_nums {
+	my ($self, %args) 	= @_;
+	my $list			= $args{'list'}		|| '';
+	my $type			= $args{type}		|| 'a';
+
+	my $key = "$type$list";
 	my $values = $self->redis()->zrangebyscore($key, "-inf", "+inf");
 
 	return @$values;
@@ -217,15 +221,26 @@ sub delete_add_ckunks {
 	my $chunknums		= $args{chunknums}	|| [];
 	my $list			= $args{'list'}		|| '';
 
-	foreach my $num (@$chunknums) {
-		my $keys = $self->redis()->keys("a$num*$list");
-		foreach my $key (@$keys) {
-			$self->redis()->del($key) if ($self->redis()->hget($key, "chunknum") == $num);
-		}
+# 	foreach my $num (@$chunknums) {
+# 		my $keys = $self->redis()->keys("a$num*$list");
+# 		foreach my $key (@$keys) {
+# 			$self->redis()->del($key) if ($self->redis()->hget($key, "chunknum") == $num);
+# 		}
+# 
+# 		$self->redis()->zrem("a$list", $num);
+# 	}
 
-		$self->redis()->zrem("a$list", $num);
+	
+	my $keys = $self->redis()->keys("a$list");
+	foreach my $key (@$keys) {
+		foreach my $num (@$chunknums) {
+			$self->redis()->del($key) if ($key =~ /^a$num/ && $self->redis()->hget($key, "chunknum") == $num);
+		}
 	}
 
+	foreach my $num (@$chunknums) {
+		$self->redis()->zrem("a$list", $num);
+	}
 }
 
 
@@ -234,12 +249,23 @@ sub delete_sub_ckunks {
 	my $chunknums		= $args{chunknums}	|| [];
 	my $list			= $args{'list'}		|| '';
 
-	foreach my $num (@$chunknums) {
-		my $keys = $self->redis()->keys("s$num*$list");
-		foreach my $key (@$keys) {
-			$self->redis()->del($key) if ($self->redis()->hget($key, "chunknum") == $num);
-		}
+# 	foreach my $num (@$chunknums) {
+# 		my $keys = $self->redis()->keys("s$num*$list");
+# 		foreach my $key (@$keys) {
+# 			$self->redis()->del($key) if ($self->redis()->hget($key, "chunknum") == $num);
+# 		}
+# 
+# 		$self->redis()->zrem("s$list", $num);
+# 	}
 
+	my $keys = $self->redis()->keys("s*$list");
+	foreach my $key (@$keys) {
+		foreach my $num (@$chunknums) {
+			$self->redis()->del($key) if ($key =~ /^s$num/ && $self->redis()->hget($key, "chunknum") == $num);
+		}
+	}
+
+	foreach my $num (@$chunknums) {
 		$self->redis()->zrem("s$list", $num);
 	}
 }
@@ -306,18 +332,33 @@ sub add_full_hashes {
 	}
 }
 
+# sub delete_full_hashes_1 {
+# 	my ($self, %args) 	= @_;
+# 	my $chunknums		= $args{chunknums}	|| [];
+# 	my $list			= $args{list}		|| croak "Missing list name\n";
+# 
+# 	foreach my $num (@$chunknums) {
+# 		my @keys = $self->redis()->keys("h$num*$list");
+# 		foreach my $key (@keys) {
+# 			$self->redis()->del($key);
+# 		}
+# 	}
+# }
+
 sub delete_full_hashes {
 	my ($self, %args) 	= @_;
 	my $chunknums		= $args{chunknums}	|| [];
 	my $list			= $args{list}		|| croak "Missing list name\n";
 
-	foreach my $num (@$chunknums) {
-		my @keys = $self->redis()->keys("h$num*$list");
-		foreach my $key (@keys) {
-			$self->redis()->del($key);
+	my @keys = $self->redis()->keys("h*$list");
+	foreach my $key (@keys) {
+		foreach my $num (@$chunknums) {
+			$self->redis()->del($key) if ($key =~ /^h$num/);
 		}
 	}
 }
+
+
 
 sub full_hash_error {
 	my ($self, %args) 	= @_;
@@ -377,7 +418,6 @@ sub add_mac_keys {
 	my $client_key		= $args{client_key}		|| '';
 	my $wrapped_key		= $args{wrapped_key}	|| '';
 
-	# INSERT INTO ...
 	$self->redis()->hmset("mac", "client_key", $client_key, "wrapped_key", $wrapped_key);
 }
 

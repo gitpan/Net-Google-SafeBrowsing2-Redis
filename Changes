@@ -1,6 +1,10 @@
 Revision history for Perl extension Net::Google::SafeBrowsing2::Redis.
 
-0.01  Fri Jun  8 17:57:33 2012
-	- original version; created by h2xs 1.23 with options
-		-XAn Net::Google::SafeBrowsing2::Redis
+0.01  Fri Jun 08 17:57:33 2012
+	- original version
 
+0.02 Mon Jun 18 19:17:00
+	- improve performances
+
+0.03 Thu Jun 28 14:29:00
+	- ready for CPAN release
