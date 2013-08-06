@@ -12,6 +12,8 @@ See http://search.cpan.org/~jsobrier/Net-Google-SafeBrowsing2/ for other back-en
 
 IMPORTANT
 
+You should flush your Redis database if you are upgrading from a version lower than 0.6 (some keys were never deleted).
+
 Version 0.3 breaks backward compatibility. If you are using version 0.2 or below, you need to reset your Redis database (i.e. start from an empty database).
 
 As of 07/31/2012, the Redis database takes 900 MB for both Google Safe Browsing lists (malware and phishing).

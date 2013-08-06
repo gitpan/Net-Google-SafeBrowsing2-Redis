@@ -11,7 +11,7 @@ use Redis::hiredis;
 use Net::Google::SafeBrowsing2;
 
 
-our $VERSION = '0.6';
+our $VERSION = '0.7';
 
 
 =head1 NAME
@@ -275,7 +275,7 @@ sub get_chunks_nums {
 sub delete_add_ckunks {
 	my ($self, %args) 	= @_;
 	my $chunknums		= $args{chunknums}	|| [];
-	my $list			= $args{'list'}		|| '';
+	my $list		= $args{'list'}		|| '';
 
 	$list = $self->map($list) unless ($self->{backward_compatible});
 	my $redis = $self->redis();
@@ -285,7 +285,7 @@ sub delete_add_ckunks {
 		while ($redis->scard($list2) > 0) {
 			my $key = $redis->spop($list2);
 
-			my $host = $redis->hget('hostkey');
+			my $host = $redis->hget($key, 'hostkey');
 			# Remove key from this list
 			$redis->srem("ah$host", $key);
 			if ($redis->scard("ah$host") == 0) {
@@ -307,7 +307,7 @@ sub delete_add_ckunks {
 sub delete_sub_ckunks {
 	my ($self, %args) 	= @_;
 	my $chunknums		= $args{chunknums}	|| [];
-	my $list			= $args{'list'}		|| '';
+	my $list		= $args{'list'}		|| '';
 
 	$list = $self->map($list) unless ($self->{backward_compatible});
 	my $redis = $self->redis();
@@ -317,7 +317,7 @@ sub delete_sub_ckunks {
 		while ($redis->scard($list2) > 0) {
 			my $key = $redis->spop($list2);
 
-			my $host = $redis->hget('hostkey');
+			my $host = $redis->hget($key, 'hostkey');
 			# Remove key from this list
 			$redis->srem("sh$host", $key);
 			if ($redis->scard("sh$host") == 0) {
@@ -541,6 +541,10 @@ Redis 2.4: 780MB
 =head1 CHANGELOG
 
 =over 4
+
+=item 0.7
+
+FIX: chunks were not deleted correctly.
 
 =item 0.6
 
